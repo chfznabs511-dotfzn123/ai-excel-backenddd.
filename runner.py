@@ -1,75 +1,60 @@
-# runner.py # For executing Python code or data operations
+# runner.py - Execute Python code safely with allowed libraries
 
 import pandas as pd
 import numpy as np
-import io
 import traceback
-
-# Import all allowed libraries
-import scipy
-import dask
-import stringcase
-import unidecode
-import statsmodels
-import pingouin
-import sklearn
-from fuzzywuzzy import fuzz
-from textblob import TextBlob
-import re
 import matplotlib
 import seaborn
 import plotly
-import missingno
 import requests
 from bs4 import BeautifulSoup
 import cvxpy
 import networkx
-import openpyxl
-import xlsxwriter
-
+import statsmodels.api as sm
+from fuzzywuzzy import fuzz
+from textblob import TextBlob
 
 def execute_code(code: str, sheet_data: dict) -> dict:
+    """
+    Executes user-provided Python code on given sheet data.
+    
+    :param code: Python code as string
+    :param sheet_data: Dictionary of sheet data (JSON-like)
+    :return: Dictionary with status and modified data or error message
+    """
     try:
-        # Convert JSON sheets to DataFrames
+        # Convert JSON sheets to pandas DataFrames
         dfs = {
             name: pd.DataFrame(data['cells'])
             for name, data in sheet_data.items()
             if 'cells' in data and data['cells']
         }
 
+        # Define the allowed globals for exec
         execution_globals = {
             'dfs': dfs,
             'pd': pd,
             'np': np,
-            'scipy': scipy,
-            'dask': dask,
-            'stringcase': stringcase,
-            'unidecode': unidecode,
-            'statsmodels': statsmodels,
-            'pingouin': pingouin,
-            'sklearn': sklearn,
-            'fuzz': fuzz,
-            'TextBlob': TextBlob,
-            're': re,
             'matplotlib': matplotlib,
             'seaborn': seaborn,
             'plotly': plotly,
-            'missingno': missingno,
             'requests': requests,
             'BeautifulSoup': BeautifulSoup,
             'cvxpy': cvxpy,
             'networkx': networkx,
-            'openpyxl': openpyxl,
-            'xlsxwriter': xlsxwriter,
-            
+            'statsmodels': sm,
+            'fuzz': fuzz,
+            'TextBlob': TextBlob,
         }
 
+        # Execute user code safely
         exec(code, execution_globals)
 
+        # Prepare output
         modified_dfs = execution_globals['dfs']
-
         output_data = {}
         for name, df in modified_dfs.items():
+            # Convert NaNs to empty strings and export as list
             output_df = df.astype(str).replace('nan', '')
             output_data[name] = {'cells': output_df.values.tolist()}
 
@@ -84,3 +69,4 @@ def execute_code(code: str, sheet_data: dict) -> dict:
             'status': 'error',
             'message': f"Execution failed with {type(e).__name__}: {str(e)}"
         }
+
