@@ -1,4 +1,4 @@
-# validator.py # For validating user inputs or code
+# validator.py - Validate code and request payloads
 
 import ast
 
