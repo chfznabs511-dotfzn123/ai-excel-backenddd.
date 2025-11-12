@@ -1,40 +1,35 @@
-# runner.py - Execute Python code safely with allowed libraries
+# runner.py - Optimized for Render free tier with charting
 
 import pandas as pd
 import numpy as np
 import traceback
-import matplotlib
-import seaborn
-import plotly
 import requests
 from bs4 import BeautifulSoup
-import statsmodels.api as sm
 from fuzzywuzzy import fuzz
+import statsmodels.api as sm
+import matplotlib.pyplot as plt  # Lightweight chart library
 
 def execute_code(code: str, sheet_data: dict) -> dict:
     try:
-        # Convert JSON sheets to pandas DataFrames
+        # Convert JSON sheets to DataFrames
         dfs = {
             name: pd.DataFrame(data['cells'])
             for name, data in sheet_data.items()
             if 'cells' in data and data['cells']
         }
 
-        # Allowed globals for exec
+        # Allowed globals
         execution_globals = {
             'dfs': dfs,
             'pd': pd,
             'np': np,
-            'matplotlib': matplotlib,
-            'seaborn': seaborn,
-            'plotly': plotly,
             'requests': requests,
             'BeautifulSoup': BeautifulSoup,
             'statsmodels': sm,
             'fuzz': fuzz,
+            'plt': plt,
         }
 
-        # Execute user code
         exec(code, execution_globals)
 
         # Prepare output
