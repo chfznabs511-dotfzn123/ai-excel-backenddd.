@@ -1,4 +1,4 @@
-# validator.py - Validate code and request payloads
+# validator.py - Validate incoming requests and Python code
 
 import ast
 
