@@ -1,4 +1,4 @@
-# runner.py - Optimized for Render free tier with charting
+# runner.py - Optimized for Render free tier with Plotly charts
 
 import pandas as pd
 import numpy as np
@@ -7,7 +7,9 @@ import requests
 from bs4 import BeautifulSoup
 from fuzzywuzzy import fuzz
 import statsmodels.api as sm
-import matplotlib.pyplot as plt  # Lightweight chart library
+import plotly.express as px
+import plotly.io as pio
+import base64
 
 def execute_code(code: str, sheet_data: dict) -> dict:
     try:
@@ -27,19 +29,30 @@ def execute_code(code: str, sheet_data: dict) -> dict:
             'BeautifulSoup': BeautifulSoup,
             'statsmodels': sm,
             'fuzz': fuzz,
-            'plt': plt,
+            'px': px,
+            'pio': pio,
+            'base64': base64,
         }
 
+        # Execute user code
         exec(code, execution_globals)
 
-        # Prepare output
+        # Prepare output DataFrames
         modified_dfs = execution_globals['dfs']
         output_data = {}
         for name, df in modified_dfs.items():
             output_df = df.astype(str).replace('nan', '')
             output_data[name] = {'cells': output_df.values.tolist()}
 
-        return {'status': 'success', 'data': output_data}
+        # Prepare Plotly chart if created
+        chart_base64 = None
+        if 'fig' in execution_globals:
+            fig = execution_globals['fig']
+            # Convert Plotly figure to PNG in memory
+            img_bytes = fig.to_image(format="png")
+            chart_base64 = base64.b64encode(img_bytes).decode('utf-8')
+
+        return {'status': 'success', 'data': output_data, 'chart': chart_base64}
 
     except Exception as e:
         traceback_str = traceback.format_exc()
@@ -50,3 +63,5 @@ def execute_code(code: str, sheet_data: dict) -> dict:
             'status': 'error',
             'message': f"Execution failed with {type(e).__name__}: {str(e)}"
         }
+
+            
