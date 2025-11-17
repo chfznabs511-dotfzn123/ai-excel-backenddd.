@@ -51,7 +51,7 @@ def execute_code(code: str, sheet_data: dict) -> dict:
         if 'fig' in execution_globals:
             fig = execution_globals['fig']
             # Convert Plotly figure to PNG in memory with higher resolution
-            img_bytes = fig.to_image(format="png", scale=3, engine="kaleido")  # <-- added scale and engine
+            img_bytes = fig.to_image(format="png", scale=6, engine="kaleido")  # <-- added scale and engine
             chart_base64 = base64.b64encode(img_bytes).decode('utf-8')
 
         return {'status': 'success', 'data': output_data, 'chart': chart_base64}
