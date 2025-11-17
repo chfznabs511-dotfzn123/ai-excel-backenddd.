@@ -1,5 +1,5 @@
-# Lightweight Python image
-FROM python:3.11.9-slim
+# Lightweight Python image 
+FROM python:3.10.12-slim
 
 # Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -18,4 +18,3 @@ COPY . .
 
 # Run Gunicorn with 1 worker for free tier
 CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 app:app
-
