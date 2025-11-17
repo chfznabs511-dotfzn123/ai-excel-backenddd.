@@ -2,6 +2,7 @@
 
 import pandas as pd
 import numpy as np
+import numpy_financial as npf  # <-- added numpy-financial
 import traceback
 import requests
 from bs4 import BeautifulSoup
@@ -25,6 +26,7 @@ def execute_code(code: str, sheet_data: dict) -> dict:
             'dfs': dfs,
             'pd': pd,
             'np': np,
+            'npf': npf,  # <-- added numpy-financial to globals
             'requests': requests,
             'BeautifulSoup': BeautifulSoup,
             'statsmodels': sm,
@@ -48,8 +50,8 @@ def execute_code(code: str, sheet_data: dict) -> dict:
         chart_base64 = None
         if 'fig' in execution_globals:
             fig = execution_globals['fig']
-            # Convert Plotly figure to PNG in memory
-            img_bytes = fig.to_image(format="png")
+            # Convert Plotly figure to PNG in memory with higher resolution
+            img_bytes = fig.to_image(format="png", scale=3, engine="kaleido")  # <-- added scale and engine
             chart_base64 = base64.b64encode(img_bytes).decode('utf-8')
 
         return {'status': 'success', 'data': output_data, 'chart': chart_base64}
@@ -63,5 +65,3 @@ def execute_code(code: str, sheet_data: dict) -> dict:
             'status': 'error',
             'message': f"Execution failed with {type(e).__name__}: {str(e)}"
         }
-
-            
