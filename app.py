@@ -8,23 +8,26 @@ from runner import execute_code
 app = Flask(__name__)
 CORS(app)
 
-# --- START OF NECESSARY ADJUSTMENT ---
+# --- NECESSARY ADJUSTMENT START ---
 def make_safe_response(data, status_code=200):
     """
-    Wraps jsonify and adds headers to STOP Render from
-    compressing the response (which causes the binary error).
+    Wraps jsonify and adds headers to prevent Render/Browsers
+    from caching or compressing the response incorrectly.
     """
     response = jsonify(data)
+    # This header tells Render "Do not compress or modify this file"
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, no-transform"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     return response, status_code
-# --- END OF NECESSARY ADJUSTMENT ---
+# --- NECESSARY ADJUSTMENT END ---
 
 @app.route('/execute', methods=['POST'])
 def execute():
     payload = request.get_json()
     errors = validate_request_payload(payload)
     if errors:
-        # Changed to use safe response
+        # Use make_safe_response instead of jsonify
         return make_safe_response({'status': 'error', 'message': '. '.join(errors)}, 400)
 
     code_to_run = payload['code']
@@ -32,15 +35,15 @@ def execute():
 
     code_errors = validate_code(code_to_run)
     if code_errors:
-        # Changed to use safe response
+        # Use make_safe_response instead of jsonify
         return make_safe_response({'status': 'error', 'message': 'Security validation failed: ' + '. '.join(code_errors)}, 400)
 
     result = execute_code(code_to_run, sheet_data)
     if result['status'] == 'success':
-        # Changed to use safe response
+        # Use make_safe_response instead of jsonify
         return make_safe_response(result, 200)
     else:
-        # Changed to use safe response
+        # Use make_safe_response instead of jsonify
         return make_safe_response(result, 500)
 
 @app.route('/')
