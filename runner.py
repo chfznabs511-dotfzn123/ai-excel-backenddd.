@@ -63,5 +63,5 @@ def execute_code(code: str, sheet_data: dict) -> dict:
         print("----------------------------")
         return {
             'status': 'error',
-            'message': f"Execution failed with {type(e)._name_}: {str(e)}"
+            'message': f"Execution failed with {type(e).__name__}: {str(e)}"
         }
