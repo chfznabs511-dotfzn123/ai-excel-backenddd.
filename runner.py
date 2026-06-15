@@ -12,30 +12,14 @@ import plotly.express as px
 import plotly.io as pio
 import base64
 
-def _looks_like_header(row):
-    """Detects if a row is a header using the safe, conservative >50% text rule."""
-    if not row or len(row) == 0: 
-        return False
-        
-    str_count = sum(1 for x in row if isinstance(x, str) and str(x).strip())
-    if str_count >= (len(row) / 2) and str_count >= 1: 
-        return True
-        
-    return False
-
 def execute_code(code: str, sheet_data: dict) -> dict:
     try:
-        # Convert JSON sheets to DataFrames and extract headers natively
-        dfs = {}
-        for name, data in sheet_data.items():
-            if 'cells' in data and data['cells']:
-                df = pd.DataFrame(data['cells'])
-                if len(df) > 0:
-                    row0 = df.iloc[0].tolist()
-                    if _looks_like_header(row0):
-                        df.columns = row0
-                        df = df.iloc[1:].reset_index(drop=True)
-                dfs[name] = df
+        # 1. WAY IN: Do NOT guess headers. Pass the raw 2D Canvas directly to the AI.
+        dfs = {
+            name: pd.DataFrame(data['cells'])
+            for name, data in sheet_data.items()
+            if 'cells' in data and data['cells']
+        }
 
         # Allowed globals
         execution_globals = {
@@ -55,18 +39,26 @@ def execute_code(code: str, sheet_data: dict) -> dict:
         # Execute user code
         exec(code, execution_globals)
 
-        # Prepare output DataFrames and restore headers
+        # 2. WAY OUT: Pack DataFrames back into 2D Arrays.
+        # If the AI explicitly defined custom Pandas columns, prepend them into the 2D array!
         modified_dfs = execution_globals['dfs']
         output_data = {}
         for name, df in modified_dfs.items():
-            df = df.fillna('')
-            # If the dataframe has custom columns, put them back into Row 0
+            # Check if columns are custom
             is_default_cols = isinstance(df.columns, pd.RangeIndex) or list(df.columns) == list(range(len(df.columns)))
+            
+            # Convert NaN to empty string for clean JSON
+            df = df.fillna('')
+            
             if not is_default_cols:
+                # Prepend custom columns to the values matrix so they don't vanish
                 new_data = [df.columns.tolist()] + df.values.tolist()
-                df = pd.DataFrame(new_data)
+                output_df = pd.DataFrame(new_data)
+            else:
+                output_df = df
                 
-            output_df = df.astype(str).replace('nan', '')
+            # Convert everything to string for JSON serialization
+            output_df = output_df.astype(str).replace('nan', '')
             output_data[name] = {'cells': output_df.values.tolist()}
 
         # Prepare Plotly chart if created
